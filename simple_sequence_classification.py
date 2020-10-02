@@ -12,8 +12,6 @@ import plotly
 # tf.config.experimental.set_visible_devices(devices=gpus[0], device_type='GPU')
 # tf.config.experimental.set_memory_growth(device=gpus[0], enable=True)
 
-data = []
-labels = []
 """
 # Predicting the performed action
 
@@ -30,58 +28,6 @@ Given a sequence of signals determine what type of action the subject is perform
 - Jogging
 
 """
-# def unzip_data(path, output):
-#     zipF = zipfile.ZipFile(open(path, "rb"))
-#     zipF.extractall(output)
-#     zipF.close()
-
-
-
-# def load_data(path):
-    
-#     print("Loading data...")
-
-#     for root, dirname, filename in os.walk(path):
-#         for dir_ in dirname:  # explore each folder within A_DeviceMotion_data
-#             filenames = os.listdir(os.path.join(root, dir_))
-#             for file in filenames:  # explore each file within the folder
-#                 class_name = dir_[:3]  # create a label based on the folder name: dws, jog, sit, std, ups, wlk
-#                 with open(os.path.join(root, dir_, file), "r") as csv_file:
-#                     next(csv_file)  # skip the header
-#                     for row in csv_file:
-#                         row_as_flow = np.fromstring(row[:-2], np.float, sep=',')[1:]  # convert to float, remove col id
-#                         data.append(row_as_flow)  
-#                         labels.append("{}".format(class_name))
-    
-#     print("Data loading done...")
-#     return data, labels
-
-
-# def save_to_csv(data, labels):
-    
-#     print("Saving to csv...")
-#     data = np.array(data)
-#     labels = np.array(labels)
-#     labels = np.expand_dims(labels, axis=-1)
-
-#     concatenated = np.concatenate((data, labels), axis=1)
-#     print(concatenated.shape)
-
-#     column_names = ["attitude.roll", "attitude.pitch", "attitude.yaw", "gravity.x", "gravity.y", "gravity.z", "rotationRate.x", "rotationRate.y", "rotationRate.z", "userAcceleration.x", "userAcceleration.y", "userAcceleration.z", 'labels']
-
-#     df = pd.DataFrame(concatenated, columns=column_names)
-#     print(df.head())
-#     df.to_csv("./pycharm/tmp/activity_timeseries/data.csv", index=False)
-#     print("Saving to csv done...")
-
-# # not needed anymore
-# if not os.path.exists("./pycharm/tmp/activity_timeseries/data.csv") and False:
-#     unzip_data("./pycharm/tmp/activity_timeseries/archive.zip", "./pycharm/tmp/activity_timeseries/")
-
-# # not needed anymore
-# if not os.path.exists("./pycharm/tmp/activity_timeseries/data.csv") and False:
-#     data, labels = load_data("./pycharm/tmp/activity_timeseries/A_DeviceMotion_data/A_DeviceMotion_data/")
-#     save_to_csv(data, labels)
 
 
 """
@@ -93,7 +39,8 @@ def load_csv(path):
     data = pd.read_csv(path, header=0, index_col=False, error_bad_lines=False)
     return data
 
-url = "https://www.dropbox.com/s/pcqz4qidzie50xb/data.csv?dl=1"
+# url = "https://www.dropbox.com/s/pcqz4qidzie50xb/data.csv?dl=1"  # this file contains the complete dataset
+url = "https://www.dropbox.com/s/w1o1p3oe97dssl9/data_subsampled.csv?dl=1"  # subsampled dataset, every other row
 data = load_csv(url)
 
 st.dataframe(data.loc[:10], width=1900)
