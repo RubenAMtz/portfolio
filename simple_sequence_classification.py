@@ -1,14 +1,10 @@
 import tensorflow as tf
 import numpy as np
-import os
-from sklearn import preprocessing
-import matplotlib.pyplot as plt
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
 import plotly
-from sklearn.utils import class_weight
 
 
 # os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
@@ -238,7 +234,7 @@ print(len(data))
 print(data.shape)
 
 exploratory_analysis(data)
-# st.stop()
+
 """
 # Processing the data :hammer:
 
@@ -250,12 +246,29 @@ exploratory_analysis(data)
 - We create training and validating batches of Y ammount of windows.
 
 """
-le = preprocessing.LabelEncoder()  # transform string classes to numeric
-le.fit(np.unique(data['labels']))
-unique_labels = len(le.classes_)
+# le = preprocessing.LabelEncoder()  # transform string classes to numeric
+# le.fit(np.unique(data['labels']))
+# unique_labels = len(le.classes_)
+# unique_labels
 
-# print(labels.shape)
-# print(labels)  # labels are now integers from 0 to 5
+# print(labels) 
+
+@st.cache
+def labels_to_numeric(labels):
+    # dictionary to translate from string to number
+    unique_labels = np.unique(labels)
+    labels_dict = dict(enumerate(unique_labels))
+    unique_labels_dict = {}
+    for key, value in labels_dict.items():
+        unique_labels_dict[value] = int(key)
+
+    lbls = []
+    for sample in labels.to_numpy():
+        lbls.append(unique_labels_dict[sample[0]])
+
+    # labels are now numbers from 0 to 5
+    return lbls
+
 
 # @st.cache
 def prepare_data(data, labels, train_split=0.7, window_size=500, batch_size=100):
@@ -268,7 +281,7 @@ def prepare_data(data, labels, train_split=0.7, window_size=500, batch_size=100)
     y = tf.data.Dataset.from_tensor_slices(labels)
     y = y.window(size=window_size, shift=1, drop_remainder=True)
     y = y.flat_map(lambda x: x.batch(window_size))
-    y = y.map(lambda x: tf.one_hot(x, unique_labels))
+    y = y.map(lambda x: tf.one_hot(x, len(np.unique(labels))))
 
     dataset = tf.data.Dataset.zip((X, y))
     dataset = dataset.shuffle(10000, seed=42)
@@ -298,19 +311,20 @@ X, labels = data[["attitude.roll", "attitude.pitch", "attitude.yaw", "gravity.x"
 print(X.shape)
 print(labels.shape)
 
-labels = le.transform(labels)
+# labels = le.transform(labels)
 
 @st.cache(suppress_st_warning=True)
-def check_prep_data():
+def checkpoint():
     prep_data = st.button('Prepare data')
     if not prep_data:
         st.warning('Please prepare the data before proceeding.')
         st.stop()
     st.success('Thank you for preparing the data')
 
-check_prep_data()
+checkpoint()
 
-# train, test, batches = prepare_data(X.loc[:samples], labels[:samples], train_split, window_size, batch_size)
+
+labels = labels_to_numeric(labels)
 train, test, batches = prepare_data(X, labels, train_split, window_size, batch_size)
 
 st.write(
@@ -383,7 +397,7 @@ def create_model(lstm, dense):
     return model
 
 
-def train_model(model, epochs, class_weights):
+def train_model(model, epochs):
 
     class MyCallBack(tf.keras.callbacks.Callback):
         epoch_placeholder = st.empty()
@@ -468,30 +482,30 @@ To finish the configuration, select the number of epochs you want to train for
 """
 epochs = st.number_input("Number of epochs: ", 1, 10, 2, 1)
 
-"""
-Important note:
+# """
+# Important note:
 
-Keep in mind that if the dataset was kept as is we will have to apply some sort of class imbalance strategy.
+# Keep in mind that if the dataset was kept as is we will have to apply some sort of class imbalance strategy.
 
-"""
-class_weights = class_weight.compute_class_weight('balanced',
-                                                 np.unique(labels),
-                                                 labels)
+# """
+# class_weights = class_weight.compute_class_weight('balanced',
+#                                                  np.unique(labels),
+#                                                  labels)
 
 """
 ## Class weights
 
 """
-dict_class_weights = dict(enumerate(class_weights))
-dict_class_weights
+# dict_class_weights = dict(enumerate(class_weights))
+# dict_class_weights
 
-class_weights_matrix = np.zeros((batches, 6))
-class_weights_matrix[:,0] = dict_class_weights[0]
-class_weights_matrix[:,1] = dict_class_weights[1]
-class_weights_matrix[:,2] = dict_class_weights[2]
-class_weights_matrix[:,3] = dict_class_weights[3]
-class_weights_matrix[:,4] = dict_class_weights[4]
-class_weights_matrix[:,5] = dict_class_weights[5]
+# class_weights_matrix = np.zeros((batches, 6))
+# class_weights_matrix[:,0] = dict_class_weights[0]
+# class_weights_matrix[:,1] = dict_class_weights[1]
+# class_weights_matrix[:,2] = dict_class_weights[2]
+# class_weights_matrix[:,3] = dict_class_weights[3]
+# class_weights_matrix[:,4] = dict_class_weights[4]
+# class_weights_matrix[:,5] = dict_class_weights[5]
 
 """
 I invite you to change the number of samples and see how the weights change, what happens if all classes have the same number of samples? 
@@ -504,7 +518,7 @@ run_training = st.button("Start training")
 # run_training = True
 if run_training:
     
-    history = train_model(model, epochs, class_weights_matrix)
+    history = train_model(model, epochs)
 
     # fig = plt.figure(figsize=(10,10))
     # plt.plot(range(epochs), history.history['loss'])
