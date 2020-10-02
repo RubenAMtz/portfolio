@@ -164,8 +164,9 @@ def exploratory_analysis(data):
 - If they *increase* the number of samples, we will allow the samples per class ie: ```class_samples[:num_samples]```
 - If they set ```num_samples``` to a number greater than the actual number of samples per class we cap the value to ```len(class_samples)```.
 
-## Another strategy (not implemented):
+## Another strategy (implemented in the original dataset):
 - Frequency conversion and resampling of time series ie: skip every other sample.
+- *This strategy was applied to the original dataset to improve the deployment performance.*
 """
 len_max_sampled_class = len(data[data.labels=='wlk'])
 samples = st.number_input(
@@ -272,6 +273,11 @@ checkpoint()
 
 
 labels = labels_to_numeric(labels)
+
+# compatibility issue with tf 2.0.x
+X = X.to_numpy()  
+labels = np.array(labels)
+
 train, test, batches = prepare_data(X, labels, train_split, window_size, batch_size)
 
 st.write(
