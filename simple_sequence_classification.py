@@ -6,11 +6,13 @@ from sklearn import preprocessing
 import matplotlib.pyplot as plt
 import streamlit as st
 import pandas as pd
-from tqdm import tqdm
+# from tqdm import tqdm
 import plotly.graph_objects as go
 import plotly.express as px
 import plotly
 from sklearn.utils import class_weight
+import requests
+from io import StringIO
 
 # os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 gpus = tf.config.experimental.list_physical_devices(device_type='GPU')
@@ -47,7 +49,7 @@ def load_data(path):
     print("Loading data...")
 
     for root, dirname, filename in os.walk(path):
-        for dir_ in tqdm(dirname):  # explore each folder within A_DeviceMotion_data
+        for dir_ in dirname:  # explore each folder within A_DeviceMotion_data
             filenames = os.listdir(os.path.join(root, dir_))
             for file in filenames:  # explore each file within the folder
                 class_name = dir_[:3]  # create a label based on the folder name: dws, jog, sit, std, ups, wlk
@@ -79,12 +81,12 @@ def save_to_csv(data, labels):
     df.to_csv("./pycharm/tmp/activity_timeseries/data.csv", index=False)
     print("Saving to csv done...")
 
-
-if not os.path.exists("./pycharm/tmp/activity_timeseries/data.csv"):
+# not needed anymore
+if not os.path.exists("./pycharm/tmp/activity_timeseries/data.csv") and False:
     unzip_data("./pycharm/tmp/activity_timeseries/archive.zip", "./pycharm/tmp/activity_timeseries/")
 
-
-if not os.path.exists("./pycharm/tmp/activity_timeseries/data.csv"):
+# not needed anymore
+if not os.path.exists("./pycharm/tmp/activity_timeseries/data.csv") and False:
     data, labels = load_data("./pycharm/tmp/activity_timeseries/A_DeviceMotion_data/A_DeviceMotion_data/")
     save_to_csv(data, labels)
 
@@ -95,14 +97,16 @@ if not os.path.exists("./pycharm/tmp/activity_timeseries/data.csv"):
 
 @st.cache
 def load_csv(path):
-    data = pd.read_csv(path, header=0, index_col=False)
+    data = pd.read_csv(path, header=0, index_col=False, error_bad_lines=False)
     return data
 
+url = "https://www.dropbox.com/s/pcqz4qidzie50xb/data.csv?dl=1"
 
-data = load_csv("./pycharm/tmp/activity_timeseries/data.csv")
-# to_display = st.slider("Samples to display", 1, 10, 5, 1)
+data = load_csv(url)
+print(data.head())
 st.dataframe(data.loc[:10], width=1900)
 st.text("Shape of the data (including the labels): " + str(data.shape))
+
 print(data.shape)
 
 def uniques(data):
